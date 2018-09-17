@@ -1,0 +1,24 @@
+version: 0.1
+log:
+  fields:
+    service: registry
+storage:
+  cache:
+    blobdescriptor: inmemory
+  filesystem:
+    rootdirectory: /var/lib/registry
+http:
+  addr: 0.0.0.0:5000
+  headers:
+    X-Content-Type-Options: [nosniff]
+  tls:
+    certificate: /certs/my-registry-server-cert.pem
+    key: /certs/my-registry-server-key.pem
+    cliencas:
+      - /certs/my-registry-ca.pem
+      - /certs/my-registry-cert-pem
+health:
+  storagedriver:
+    enabled: true
+    interval: 10s
+    threshold: 3
