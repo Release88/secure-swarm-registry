@@ -6,6 +6,10 @@
 VAGRANTFILE_API_VERSION = "2"
 
 $swarm_num_nodes = 3
+$starting_ip = "10.11.1.70"
+$swarm_domain = "my-swarm"
+$swarm_node_prefix = "swarm-"
+$registry_domain = "my-registry"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # Configurazioni comuni.
@@ -30,14 +34,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # - Docker-compose 	
     #
     $swarm_num_nodes.downto(1).each do |i| 
-        config.vm.define vm_name = "swarm-%01d" % [i] do |node|
+        config.vm.define vm_name = "#{$swarm_node_prefix}%01d" % [i] do |node|
 			node.vm.hostname = vm_name    
 
-            ip = "10.11.1.#{70+i}"
+			#ip = "10.11.1.#{70+i}"
+			# prendo le prime 3 parti dell'indirizzo ip: 10.11.1
+			ip_prefix = $starting_ip.split(".")[0...-1].join(".")
+			# estraggo l'ultima parte dell'indirizzo a cui aggiungere la i
+			# .to_i --> conversione da stringa ad intero.
+			ip_starting_number = $starting_ip.split(".")[3].to_i
+			ip = "#{ip_prefix}.#{ip_starting_number+i}"
             node.vm.network "private_network", ip: ip, virtualbox__intnet: true
 
 			node.vm.provider "virtualbox" do |v| 
-	            v.memory = 2048 
+	            v.memory = 2048
 				v.cpus = 2
 				v.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
 			end 
@@ -48,14 +58,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 			# 8080 -> 808i per evitare conflitti sulla porta 8080 con altre vm (e.g., developer) 
 			node.vm.network "forwarded_port", guest: 8080, host: "#{8080+i}", id: 'http', auto_correct: true
 
+			node.vm.provision :shell, path: "../_shared/scripts/set-env-variables.sh", args: [$starting_ip, $registry_domain, $swarm_domain, $swarm_node_prefix, $swarm_num_nodes]
 			# genera i certificati client/server per i nodi dello swarm e per il registry
-			if i==3
-				node.vm.provision :shell, path: "../_shared/scripts/generate-keys.sh"
+			if i == $swarm_num_nodes
+				node.vm.provision :shell, path: "../_shared/scripts/generate-certs.sh"
 			end
 
 			# copia i certificati client e server
 			node.vm.provision :shell, path: "../_shared/scripts/copy-ssl-client-data.sh"
-			node.vm.provision :shell, path: "../_shared/scripts/copy-ssl-server-data.sh", args: i
+			node.vm.provision :shell, path: "../_shared/scripts/copy-ssl-registry-data.sh"
 
 			# copia il file override-ssl.conf e lo rinomina in override.conf
 			node.vm.provision :shell, path: "../_shared/scripts/ssl-override.sh"
@@ -68,8 +79,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 			
 			# crea lo swarm sul nodo 1 (e avvia anche il registry per lo swarm)
 			if i==1
-			  node.vm.provision :shell, path: "../_shared/scripts/start-swarm.sh"
-			  node.vm.provision :shell, path: "../_shared/scripts/start-swarm-registry.sh"
+			  #node.vm.provision :shell, path: "../_shared/scripts/start-swarm.sh"
+			  #node.vm.provision :shell, path: "../_shared/scripts/start-swarm-registry.sh"
 			end
 
 			# crea un link simbolico alla cartella dei progetti asw nella cartella dell'utente di default 
@@ -89,7 +100,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.define "dev" do |node|
         node.vm.hostname = "dev"  
 
-        node.vm.network "private_network", ip: "10.11.1.81", virtualbox__intnet: true
+		ip_prefix = $starting_ip.split(".")[0...-1].join(".")
+		ip_starting_number = $starting_ip.split(".")[3].to_i
+		ip = "#{ip_prefix}.#{ip_starting_number+11}"
+        node.vm.network "private_network", ip: ip, virtualbox__intnet: true
 
 		node.vm.provider "virtualbox" do |v| 
             v.memory = 1024 
@@ -102,6 +116,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  
 		# port forwarding (attenzione al possibile conflitto con l'ambiente developer)
 		node.vm.network "forwarded_port", guest: 8080, host: 8089, id: 'http', auto_correct: true
+
+		node.vm.provision :shell, path: "../_shared/scripts/set-env-variables.sh", args: [$starting_ip, $registry_domain, $swarm_domain, $swarm_node_prefix, $swarm_num_nodes]
 
         # installa Java, Gradle e Maven  
         node.vm.provision :shell, path: "../_shared/scripts/setup-java.sh"
