@@ -5,13 +5,15 @@
 
 echo "Creating swarm on swarm-1" 
 
-docker swarm init --advertise-addr 10.11.1.71
+docker swarm init --advertise-addr ${IP_PREFIX}$(($IP_STARTING_NUM+1))
 
 SWARM_TOKEN=$(docker swarm join-token -q worker)
 
 echo "Swarm token: ${SWARM_TOKEN}"
-echo "Adding swarm-2 and swarm-3" 
+echo "Adding other swarm nodes" 
 
 # inserisco nel comando le chiavi e il certificato
-docker --host swarm-2:2376 --tlsverify --tlscacert /home/vagrant/.docker/swarm-2-ca.pem --tlscert /home/vagrant/.docker/swarm-2-cert.pem --tlskey /home/vagrant/.docker/swarm-2-key.pem swarm join --token ${SWARM_TOKEN} swarm-1:2377
-docker --host swarm-3:2376 --tlsverify --tlscacert /home/vagrant/.docker/swarm-3-ca.pem --tlscert /home/vagrant/.docker/swarm-3-cert.pem --tlskey /home/vagrant/.docker/swarm-3-key.pem swarm join --token ${SWARM_TOKEN} swarm-1:2377
+for ((i=2; i<=${SWARM_NUM}; i++))
+    do
+        docker --host swarm-${i}:2376 --tlsverify --tlscacert /home/vagrant/.docker/ca.pem --tlscert /home/vagrant/.docker/cert.pem --tlskey /home/vagrant/.docker/key.pem swarm join --token ${SWARM_TOKEN} swarm-1:2377
+    done

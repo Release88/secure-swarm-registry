@@ -2,7 +2,7 @@
 
 # DOCKER_REGISTRY=localhost:5000
 # my-registry e my-swarm sono degli alias per swarm-1
-DOCKER_REGISTRY=my-registry:5000
+DOCKER_REGISTRY=${REGISTRY_DOMAIN}:5000
 
 docker build --rm -t ${DOCKER_REGISTRY}/eureka-server-img ./eureka-server
 docker build --rm -t ${DOCKER_REGISTRY}/word-img ./word-service

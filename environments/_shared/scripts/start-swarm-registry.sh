@@ -24,7 +24,7 @@ mkdir -p /home/asw/data/my-registry
 
 # modifico il comando inserendo la cartella dei certificati ed il file di configurazione
 
-docker service create --name my-registry \
+docker service create --name ${REGISTRY_DOMAIN} \
                       --publish 5000:5000 \
 					  --restart-condition on-failure \
 					  --mount type=bind,src=/home/asw/data/my-registry,dst=/var/lib/registry \
