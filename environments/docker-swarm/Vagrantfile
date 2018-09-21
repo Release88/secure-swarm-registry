@@ -10,12 +10,13 @@ $starting_ip = "10.11.1.70"
 $swarm_domain = "my-swarm"
 $swarm_node_prefix = "swarm-"
 $registry_domain = "my-registry"
+$image_version = "bento/ubuntu-18.04" # compatibile anche con "bento/ubuntu-16.04"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # Configurazioni comuni.
 
     # Ubuntu 18.04 LTS 64 bit VirtualBox (Bento)
-    config.vm.box = "bento/ubuntu-18.04"
+    config.vm.box = $image_version
     # config.vm.box_url = "https://app.vagrantup.com/bento/boxes/ubuntu-18.04"
 
     # folder per i progetti Asw (/home/asw/projects)
