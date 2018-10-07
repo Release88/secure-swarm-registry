@@ -1,6 +1,6 @@
 # 
-# Vagrantfile per un cluster (swarm) di nodi (docker), su cui � installato Docker e Docker Compose. 
-# Basata su Ubunty 16.04 LTS. 
+# Vagrantfile per un cluster (swarm) di nodi (docker), su cui è installato Docker e Docker Compose. 
+# Basata su Ubuntu 16.04 LTS. 
 # 
 
 VAGRANTFILE_API_VERSION = "2"
