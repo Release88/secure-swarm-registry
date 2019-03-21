@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source "/home/asw/_shared/scripts/common.sh"
-
 # da https://github.com/paulczar/omgwtfssl 
 # https://github.com/paulczar/omgwtfssl/blob/master/generate-certs
 
@@ -14,6 +12,7 @@ if [[ -z $SILENT ]]; then
 echo "Generazione dei certificati"
 fi
 
+export CERTS_PATH=${CERTS_PATH}
 
 export CA_KEY=${CERTS_PATH}/${CA_KEY-"ca-key.pem"}
 export CA_CERT=${CERTS_PATH}/${CA_CERT-"ca.pem"}

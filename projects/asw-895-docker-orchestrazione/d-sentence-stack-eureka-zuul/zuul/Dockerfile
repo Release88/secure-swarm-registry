@@ -2,7 +2,7 @@
 # Dockerfile per l'applicazione sentence / eureka server 
 ########################################################
 
-FROM frolvlad/alpine-oraclejdk8 
+FROM frolvlad/alpine-java
 
 ADD build/libs/zuul-0.0.1-SNAPSHOT.jar zuul.jar
 

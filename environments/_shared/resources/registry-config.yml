@@ -7,6 +7,10 @@ storage:
     blobdescriptor: inmemory
   filesystem:
     rootdirectory: /var/lib/registry
+auth:
+  htpasswd:
+    realm: basic-realm
+    path: /auth/htpasswd # $eCur3-r3gistrY!
 http:
   addr: 0.0.0.0:5000
   headers:

@@ -5,7 +5,7 @@ source "/home/asw/_shared/scripts/common.sh"
 #
 # copia il file OVERRIDE.CONF per sovrascrivere la configurazione di docker 
 # - abilita la comunicazione remota del nodo 
-# - abilita my-registry:5000 come registry insicuro 
+# - abilita my-registry come registry insicuro 
 # - abilita la protezione tramite crittografia
 # - pensato per il nodo swarm manager
 

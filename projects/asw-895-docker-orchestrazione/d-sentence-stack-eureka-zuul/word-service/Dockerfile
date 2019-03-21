@@ -2,7 +2,7 @@
 # Dockerfile per l'applicazione sentence / word service 
 ########################################################
 
-FROM frolvlad/alpine-oraclejdk8 
+FROM frolvlad/alpine-java
 
 ADD build/libs/word-0.0.1-SNAPSHOT.jar word.jar
 

@@ -7,4 +7,4 @@ echo 'Halting sentence application as a stack'
 DOCKER_SWARM=tcp://swarm-1:2376
 
 # inserisco le chiavi e il certificato dello swarm-1
-docker --host ${DOCKER_SWARM} --tlsverify --tlscacert /home/vagrant/.docker/swarm-1-ca.pem --tlscert /home/vagrant/.docker/swarm-1-cert.pem --tlskey /home/vagrant/.docker/swarm-1-key.pem stack rm sentence
+docker --host ${DOCKER_SWARM} --tlsverify --tlscacert /home/vagrant/.docker/ca.pem --tlscert /home/vagrant/.docker/cert.pem --tlskey /home/vagrant/.docker/key.pem stack rm sentence

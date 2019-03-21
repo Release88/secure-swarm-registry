@@ -1,5 +1,5 @@
 *
-
+!htpasswd
 !registry-config.yml
-!/docker.service.dZ
+!/docker.service.d
 !.gitignore

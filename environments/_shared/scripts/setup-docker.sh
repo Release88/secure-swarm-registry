@@ -60,6 +60,8 @@ groupadd docker
 
 # abilita l'utente vagrant 
 usermod -aG docker ${VAGRANT_USER}
+chown -R vagrant /home/vagrant/.docker
+
 # Remember to log out and back in for this to take effect! 
 
 ##### configure docker to start on boot 
