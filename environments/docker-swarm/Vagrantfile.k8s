@@ -1,0 +1,150 @@
+# 
+# Vagrantfile per un cluster (swarm) di nodi (docker), su cui è installato Docker e Docker Compose. 
+# Basata su Ubuntu 16.04 LTS. 
+# 
+
+VAGRANTFILE_API_VERSION = "2"
+
+$swarm_num_nodes = 3
+$starting_ip = "10.11.1.70"
+$swarm_domain = "my-swarm"
+$swarm_node_prefix = "swarm-"
+$registry_domain = "my-registry"
+$image_version = "bento/ubuntu-18.04" # compatibile anche con "bento/ubuntu-16.04"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    # Configurazioni comuni.
+
+    # Ubuntu 18.04 LTS 64 bit VirtualBox (Bento)
+    config.vm.box = $image_version
+    # config.vm.box_url = "https://app.vagrantup.com/bento/boxes/ubuntu-18.04"
+
+    # folder per i progetti Asw (/home/asw/projects)
+    config.vm.synced_folder "../../projects/", "/home/asw/projects", :mount_options => ["dmode=777", "fmode=777"]
+
+    # folder per le risorse condivise per gli ambienti Asw (/home/asw/_shared/resources e /home/asw/_shared/scripts) 
+    config.vm.synced_folder "../_shared/", "/home/asw/_shared", :mount_options => ["dmode=777", "fmode=777"]
+
+    # folder per i dati condivisi per gli ambienti Asw (/home/asw/data) 
+	# usato per un volume per il registry swarm 
+    config.vm.synced_folder "../../data/", "/home/asw/data", :mount_options => ["dmode=777", "fmode=777"]
+
+    #
+    # Configurazione dei nodi "swarm-i", che prevedono: 
+    # - Docker 
+    # - Docker-compose 	
+    #
+    $swarm_num_nodes.downto(1).each do |i| 
+        config.vm.define vm_name = "#{$swarm_node_prefix}%01d" % [i] do |node|
+			node.vm.hostname = vm_name    
+
+			#ip = "10.11.1.#{70+i}"
+			# prendo le prime 3 parti dell'indirizzo ip: 10.11.1
+			ip_prefix = $starting_ip.split(".")[0...-1].join(".")
+			# estraggo l'ultima parte dell'indirizzo a cui aggiungere la i
+			# .to_i --> conversione da stringa ad intero.
+			ip_starting_number = $starting_ip.split(".")[3].to_i
+			ip = "#{ip_prefix}.#{ip_starting_number+i}"
+            node.vm.network "private_network", ip: ip, virtualbox__intnet: true
+
+			node.vm.provider "virtualbox" do |v| 
+	            v.memory = 2048
+				v.cpus = 2
+				v.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+			end 
+
+			node.vm.network "forwarded_port", guest: 22, host: 2211, id: 'ssh', auto_correct: true
+			node.ssh.forward_agent = true
+ 
+			# 8080 -> 808i per evitare conflitti sulla porta 8080 con altre vm (e.g., developer) 
+			node.vm.network "forwarded_port", guest: 8080, host: "#{8080+i}", id: 'http', auto_correct: true
+
+			node.vm.provision :shell, path: "../_shared/scripts/set-env-variables.sh", args: [$starting_ip, $registry_domain, $swarm_domain, $swarm_node_prefix, $swarm_num_nodes]
+			# genera i certificati client/server per i nodi dello swarm e per il registry
+			# if i == $swarm_num_nodes
+			# 	node.vm.provision :shell, path: "../_shared/scripts/crea-certificati-per-lo-swarm.sh"
+			# 	node.vm.provision :shell, path: "../_shared/scripts/crea-certificati-per-il-registry.sh"
+			# end
+
+			# copia i certificati client e server
+			# node.vm.provision :shell, path: "../_shared/scripts/copy-ssl-client-data.sh"
+			# node.vm.provision :shell, path: "../_shared/scripts/copy-ssl-registry-data.sh"
+
+			# copia il file override-ssl.conf e lo rinomina in override.conf
+			# node.vm.provision :shell, path: "../_shared/scripts/ssl-override.sh"
+
+			# installa docker e docker compose 
+			node.vm.provision :shell, path: "../_shared/scripts/setup-docker.sh"
+			node.vm.provision :shell, path: "../_shared/scripts/setup-docker-compose.sh"
+			node.vm.provision :shell, path: "../_shared/scripts/setup-swarm-hosts.sh"
+
+			
+			# crea lo swarm sul nodo 1 (e avvia anche il registry per lo swarm)
+			# if i==1
+			#   node.vm.provision :shell, path: "../_shared/scripts/start-swarm.sh"
+			#   node.vm.provision :shell, path: "../_shared/scripts/start-swarm-registry.sh"
+			# end
+
+			# crea un link simbolico alla cartella dei progetti asw nella cartella dell'utente di default 
+			node.vm.provision :shell, :inline => 'ln -s /home/asw/projects projects'
+
+			config.vm.provision :shell, 
+				inline: "echo  'configurazione di questo nodo swarm completa'"
+			
+		end 
+    end
+
+    #
+    # Configurazione del nodo "dev", che prevede: 
+    # - Docker e Docker-compose 
+	# - Java, Gradle e Maven 
+    #
+    config.vm.define "dev" do |node|
+        node.vm.hostname = "dev"  
+
+		ip_prefix = $starting_ip.split(".")[0...-1].join(".")
+		ip_starting_number = $starting_ip.split(".")[3].to_i
+		ip = "#{ip_prefix}.#{ip_starting_number+11}"
+        node.vm.network "private_network", ip: ip, virtualbox__intnet: true
+
+		node.vm.provider "virtualbox" do |v| 
+            v.memory = 1024 
+			v.cpus = 1
+			v.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+		end 
+
+		node.vm.network "forwarded_port", guest: 22, host: 2221, id: 'ssh', auto_correct: true
+		node.ssh.forward_agent = true
+ 
+		# port forwarding (attenzione al possibile conflitto con l'ambiente developer)
+		node.vm.network "forwarded_port", guest: 8080, host: 8089, id: 'http', auto_correct: true
+
+		node.vm.provision :shell, path: "../_shared/scripts/set-env-variables.sh", args: [$starting_ip, $registry_domain, $swarm_domain, $swarm_node_prefix, $swarm_num_nodes]
+
+        # installa Java, Gradle e Maven  
+        node.vm.provision :shell, path: "../_shared/scripts/setup-java.sh"
+        node.vm.provision :shell, path: "../_shared/scripts/setup-gradle.sh"
+        node.vm.provision :shell, path: "../_shared/scripts/setup-maven.sh"
+
+		# copia i certificati client
+		# node.vm.provision :shell, path: "../_shared/scripts/copy-ssl-client-data.sh"
+		# copia il file override-dev.conf e lo rinomina in override.conf 
+		# node.vm.provision :shell, path: "../_shared/scripts/standard-override.sh"
+		# installa docker e docker compose
+		node.vm.provision :shell, path: "../_shared/scripts/setup-docker.sh"
+		node.vm.provision :shell, path: "../_shared/scripts/setup-docker-compose.sh"
+		node.vm.provision :shell, path: "../_shared/scripts/setup-swarm-hosts.sh"
+		# node.vm.provision :shell, path: "../_shared/scripts/dev-registry-login.sh"
+
+		# crea un link simbolico alla cartella dei progetti asw nella cartella dell'utente di default 
+		node.vm.provision :shell, :inline => 'ln -s /home/asw/projects projects'
+
+		config.vm.provision :shell, 
+			inline: "echo  'configurazione di questo nodo dev completa'"
+			
+    end
+
+	config.vm.provision :shell, 
+		inline: "echo  'configurazione del cluster swarm completa'"
+
+end

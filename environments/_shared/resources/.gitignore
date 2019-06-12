@@ -1,5 +1,10 @@
 *
 !htpasswd
 !registry-config.yml
+!registry-secret.yaml
+!registry-pod.yaml
+!registry-port.yaml
+!registry-deployment.yaml
+!load-balancer-configuration.yaml
 !/docker.service.d
 !.gitignore

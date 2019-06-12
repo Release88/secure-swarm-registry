@@ -1,0 +1,305 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: eureka
+  name: eureka
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: eureka
+    spec:
+      containers:
+      - image: my-registry:30500/eureka-server-img
+        name: eureka
+        resources: {}
+        ports:
+        - containerPort: 8761
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-stack-sentence.yml
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: subject
+  name: subject
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: subject
+    spec:
+      containers:
+      - args:
+        - -jar
+        - -Dspring.profiles.active=subject
+        - word.jar
+        image: my-registry:30500/word-img
+        name: subject
+        resources: {}
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-stack-sentence.yml
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: verb
+  name: verb
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: verb
+    spec:
+      containers:
+      - args:
+        - -jar
+        - -Dspring.profiles.active=verb
+        - word.jar
+        image: my-registry:30500/word-img
+        name: verb
+        resources: {}
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-stack-sentence.yml
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: object
+  name: object
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: object
+    spec:
+      containers:
+      - args:
+        - -jar
+        - -Dspring.profiles.active=object
+        - word.jar
+        image: my-registry:30500/word-img
+        name: object
+        resources: {}
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-stack-sentence.yml
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: sentence
+  name: sentence
+spec:
+  replicas: 2
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: sentence
+    spec:
+      containers:
+      - image: my-registry:30500/sentence-img
+        name: sentence
+        resources: {}
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-stack-sentence.yml
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: zuul
+  name: zuul
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: zuul
+    spec:
+      containers:
+      - image: my-registry:30500/sentence-zuul-img
+        name: zuul
+        resources: {}
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zuul-service
+spec:
+  ports:
+  - name: "8080"
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+    nodePort: 30080
+  selector:
+    io.kompose.service: zuul
+  type: LoadBalancer
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eureka-node-port
+  labels:
+    name: eureka-node-port
+spec:
+  type: NodePort
+  ports:
+    - port: 8761
+      targetPort: 8761
+      name: eureka-node-port
+  selector:
+    io.kompose.service: eureka
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: subject-node-port
+  labels:
+    name: subject-node-port
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: subject-node-port
+  selector:
+    io.kompose.service: subject
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: verb-node-port
+  labels:
+    name: verb-node-port
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: verb-node-port
+  selector:
+    io.kompose.service: verb
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: object-node-port
+  labels:
+    name: object-node-port
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: object-node-port
+  selector:
+    io.kompose.service: object
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sentence-node-port
+  labels:
+    name: sentence-node-port
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: sentence-node-port
+  selector:
+    io.kompose.service: sentence
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zuul-node-port
+  labels:
+    name: zuul-node-port
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: zuul-node-port
+  selector:
+    io.kompose.service: zuul

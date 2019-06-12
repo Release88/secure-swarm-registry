@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-registry-deployment
+  labels:
+    app: my-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-registry
+      run: my-registry
+  template:
+    metadata:
+      labels:
+        app: my-registry
+        run: my-registry
+    spec:
+      containers:
+      - name: registry
+        image: registry:2
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: images
+          mountPath: /var/lib/registry
+        - name: certs
+          mountPath: /certs
+        - name: config
+          mountPath: /etc/docker/registry/config.yml
+        - name: auth
+          mountPath: /auth/htpasswd
+      dnsPolicy: Default
+      volumes:
+        - name: images
+          hostPath: 
+            path: /home/asw/data/my-registry
+        - name: certs
+          hostPath:
+            path: /home/vagrant/.docker/registry
+        - name: config
+          hostPath:
+            path: /home/asw/_shared/resources/registry-config.yml
+        - name: auth
+          hostPath:
+            path: /home/asw/_shared/resources/htpasswd
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry-service
+spec:
+  ports:
+  - name: http
+    port: 5000
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    app: my-registry
+  type: LoadBalancer
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry-node-port
+  labels:
+    name: registry-node-port
+spec:
+  type: NodePort
+  ports:
+    - port: 5000
+      nodePort: 30500
+      targetPort: 5000
+      name: http
+    - port: 443
+      nodePort: 32443
+      targetPort: 443
+      name: https
+  selector:
+    name: my-registry-deployment

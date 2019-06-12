@@ -64,8 +64,8 @@ EOF
         touch /etc/default/kubelet
     fi
     echo -e "KUBELET_EXTRA_ARGS=--node-ip=$IP_ADDR --cgroup-driver=cgroupfs" >> /etc/default/kubelet
+    # sudo sed -i "/^[^#]*KUBELET_EXTRA_ARGS=/c\KUBELET_EXTRA_ARGS=--node-ip=$IP_ADDR --cgroup-driver=cgroupfs" /etc/default/kubelet
     sudo systemctl restart kubelet
-    cp -r /etc/docker/certs.d/my-registry\:5000 /etc/docker/certs.d/my-registry\:30500
 SCRIPT
 
 $configureMaster = <<-SCRIPT
@@ -84,34 +84,27 @@ $configureMaster = <<-SCRIPT
     kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
     kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
     kubeadm token create --print-join-command >> /etc/kubeadm_join_cmd.sh
-    cp /etc/kubeadm_join_cmd.sh /home/asw/_shared/resources/kubeadm_join_cmd.sh
-    chmod +x /home/asw/_shared/resources/kubeadm_join_cmd.sh
+    chmod +x /etc/kubeadm_join_cmd.sh
+    # required for setting up password less ssh between guest VMs
     sudo sed -i "/^[^#]*PasswordAuthentication[[:space:]]no/c\PasswordAuthentication yes" /etc/ssh/sshd_config
     sudo service sshd restart
-    cp /home/vagrant/.kube/config /home/asw/_shared/resources/config
+    cp /etc/kubernetes/kubelet.conf /home/vagrant/kubelet.conf
+    chown vagrant:vagrant /home/vagrant/kubelet.conf
 SCRIPT
 
 $configureNode = <<-SCRIPT
     echo "This is worker"
-    # apt-get install -y sshpass
-    # sshpass -p "vagrant" scp -o StrictHostKeyChecking=no vagrant@10.11.1.73:/etc/kubeadm_join_cmd.sh .
-    # sh ./kubeadm_join_cmd.sh
-    # sshpass -p "vagrant" scp -o StrictHostKeyChecking=no vagrant@10.11.1.73:/home/vagrant/kubelet.conf .
-    # chown vagrant:vagrant /home/vagrant/kubelet.conf
-    cp /home/asw/_shared/resources/kubeadm_join_cmd.sh .
-    chmod +x kubeadm_join_cmd.sh
+    apt-get install -y sshpass
+    sshpass -p "vagrant" scp -o StrictHostKeyChecking=no vagrant@10.11.1.73:/etc/kubeadm_join_cmd.sh .
     sh ./kubeadm_join_cmd.sh
-    mkdir -p /home/vagrant/.kube
-    cp /home/asw/_shared/resources/config /home/vagrant/.kube/config
+    sshpass -p "vagrant" scp -o StrictHostKeyChecking=no vagrant@10.11.1.73:/home/vagrant/kubelet.conf .
+    chown vagrant:vagrant /home/vagrant/kubelet.conf
 SCRIPT
 
 $configureDev = <<-SCRIPT
     echo "This is dev"
-    # apt-get install -y sshpass
-    # sshpass -p "vagrant" scp -o StrictHostKeyChecking=no vagrant@10.11.1.73:/home/vagrant/kubelet.conf .
-    # chown vagrant:vagrant /home/vagrant/kubelet.conf
-    mkdir -p /home/vagrant/.kube
-    cp /home/asw/_shared/resources/config /home/vagrant/.kube/config
+    apt-get install -y sshpass
+    sshpass -p "vagrant" scp -o StrictHostKeyChecking=no vagrant@10.11.1.73:/home/vagrant/kubelet.conf .
 SCRIPT
 
 VAGRANTFILE_API_VERSION = "2"
@@ -160,18 +153,21 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             
             if opts[:type] == "master"
                  # questi devono essere avviati soltanto dal primo nodo
+                 config.vm.provision :shell, path: "../_shared/scripts/crea-certificati-per-lo-swarm.sh"
                  config.vm.provision :shell, path: "../_shared/scripts/crea-certificati-per-il-registry.sh"
             end
 
-            config.vm.provision :shell, path: "../_shared/scripts/copy-ssl-data.sh"
+            config.vm.provision :shell, path: "../_shared/scripts/copy-ssl-client-data.sh"
 
             if opts[:type] != "dev"
                 config.vm.provision :shell, path: "../_shared/scripts/copy-ssl-registry-data.sh"
+                config.vm.provision :shell, path: "../_shared/scripts/ssl-override.sh"
             else
                 config.vm.provision :shell, path: "../_shared/scripts/setup-java.sh"
                 config.vm.provision :shell, path: "../_shared/scripts/setup-gradle.sh"
                 config.vm.provision :shell, path: "../_shared/scripts/setup-maven.sh"
 
+                config.vm.provision :shell, path: "../_shared/scripts/standard-override.sh"
                 config.vm.provision :shell, :inline => 'ln -s /home/asw/projects projects'
             end
 

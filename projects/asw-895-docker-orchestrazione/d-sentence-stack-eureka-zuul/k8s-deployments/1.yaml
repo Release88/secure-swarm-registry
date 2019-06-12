@@ -1,0 +1,29 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-stack-sentence.yml
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: eureka
+  name: eureka
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: eureka
+    spec:
+      containers:
+      - image: my-registry:5000/eureka-server-img
+        name: eureka
+        resources: {}
+        ports:
+        - containerPort: 8761
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+status: {}

@@ -32,7 +32,7 @@ if [[ -d ${CERTS_PATH} ]]; then
     [[ -z $SILENT ]] && echo "====> Using existing certificate folder ${CERTS_PATH}"
 else
     [[ -z $SILENT ]] && echo "====> Creating new certificate folder ${CERTS_PATH}"
-    mkdir ${CERTS_PATH}
+    mkdir -p ${CERTS_PATH}
 fi
 
 # ora crea i certificati 

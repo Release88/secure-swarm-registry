@@ -3,3 +3,6 @@
 !.gitignore
 !leggimi.txt
 !Vagrantfile
+!Vagrantfile.old
+!Vagrantfile.new
+!Vagrantfile.k8s

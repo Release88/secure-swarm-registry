@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-stack-sentence.yml
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: object
+  name: object
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: object
+    spec:
+      containers:
+      - args:
+        - -jar
+        - -Dspring.profiles.active=object
+        - word.jar
+        image: my-registry:5000/word-img
+        name: object
+        resources: {}
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+status: {}
