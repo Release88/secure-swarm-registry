@@ -71,7 +71,7 @@ su dev:
 
 
 installazione my-registry:
-kubectl apply -f registry-pod.yaml
+kubectl create -f registry-pod.yaml
 kubectl create -f registry-port.yaml
 
 

@@ -2,5 +2,5 @@
 
 echo 'Starting sentence application as a stack' 
 
-# inserisco le chiavi e il certificato dello swarm-1
+kubectl create secret generic regcred --from-file=.dockerconfigjson=/home/vagrant/.docker/config.json --type=kubernetes.io/dockerconfigjson
 kubectl apply -f sentence-stack.yaml
