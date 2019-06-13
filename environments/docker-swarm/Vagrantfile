@@ -179,21 +179,29 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             config.vm.provision :shell, path: "../_shared/scripts/setup-docker-compose.sh"
             config.vm.provision :shell, path: "../_shared/scripts/setup-swarm-hosts.sh"
 
+            if opts[:type] == "master"
+                config.vm.provision :shell, path: "../_shared/scripts/crea-file-htpasswd.sh"
+            end
+
             if opts[:type] == "dev"
                 # config.vm.provision :shell, path: "../_shared/scripts/dev-registry-login.sh"
             end
                 
-            config.vm.provision "shell", inline: $configureBox
+            config.vm.provision :shell, path: "../_shared/scripts/configura-box-per-kubernetes.sh"
 
             if opts[:type] == "master"
-                config.vm.provision "shell", inline: $configureMaster
+                config.vm.provision :shell, path: "../_shared/scripts/configura-master-per-kubernetes.sh"
 
             elsif opts[:type] == "dev"
-                config.vm.provision "shell", inline: $configureDev
+                config.vm.provision :shell, path: "../_shared/scripts/configura-dev-per-kubernetes.sh"
+                config.vm.provision :shell, path: "../_shared/scripts/docker-registry-login.sh"
             else
-                config.vm.provision "shell", inline: $configureNode
+                config.vm.provision :shell, path: "../_shared/scripts/configura-nodo-per-kubernetes.sh"
             end
 
+            if opts[:name] == "swarm-1"
+                config.vm.provision :shell, path: "../_shared/scripts/start-registry-service.sh"
+            end
         end
 
     end
